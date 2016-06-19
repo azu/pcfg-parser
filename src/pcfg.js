@@ -7,27 +7,32 @@ const Rule = require("./rule");
 const PcfgNode = require("./pcfg_node");
 const RuleTree = require("./rule_tree_node");
 class Pcfg {
-    static parse(text, rules, callback) {
-        var parser = new Pcfg();
-        var fn = function (tokens) {
-            parser.rules = rules.concat();
-            var parsed = parser.calc(tokens);
-            if (parsed) {
-                parser.recalcProbability(tokens, parser.nodeMap);
-                callback(parser.ruleTreeMap, tokens, parser.rules);
-            }
-            else {
-                callback(null, tokens, parser.rules);
-            }
-        };
-        parser.tokenize(text, fn);
+    static parse(text, rules) {
+        return new Promise((resolve, reject) => {
+            var parser = new Pcfg();
+            var fn = function (tokens) {
+                parser.rules = rules.concat();
+                var parsed = parser.calc(tokens);
+                if (parsed) {
+                    parser.recalcProbability(tokens, parser.nodeMap);
+                    resolve({
+                        nodeTree: parser.ruleTreeMap,
+                        tokens,
+                        newRules: parser.rules
+                    });
+                } else {
+                    reject(new Error("Can't parse"));
+                }
+            };
+            parser.tokenize(text, fn);
+        });
     }
 
     tokenize(text, callback) {
         getTokenizer().then(tokenizer => {
             var parsed = tokenizer.tokenize(text);
             parsed.forEach((token, i) => {
-                console.log(token.surface_form + " " + Pcfg.getJoinedPos(token));
+                // console.log(token.surface_form + " " + Pcfg.getJoinedPos(token));
             });
             //parsed.unshift(<Token>{
             //  pos: "BOS"
@@ -53,7 +58,6 @@ class Pcfg {
             this.nodeMap[i] = [];
             this.ruleTreeMap[i] = [];
             var pos = Pcfg.getJoinedPos(tokens[i]);
-            console.log(pos);
             this.nodeMap[i][i] = new PcfgNode();
             this.nodeMap[i][i].inside[pos] = 1.0;
             this.ruleTreeMap[i][i] = new RuleTree.Node();

@@ -1,7 +1,9 @@
+// LICENSE : MIT
 "use strict";
-const Pcfg = require("./pcfg");
-const Rule = require("./rule");
-var rules = [
+import traverser from "../src/traverser";
+import pcfg from "../src/pcfg";
+import Rule from "../src/rule";
+const rules = [
     "S>名詞句 形容詞 0.5",
     "S>名詞句 名詞 0.3",
     "S>名詞句 動詞 0.2",
@@ -65,43 +67,36 @@ var rules = [
     "動詞>名詞 助動詞 0.5",
     "動詞>名詞 動詞 0.5"
 ].map((expr) => Rule.fromString(expr));
-var text = "経営に失敗した企業に会社更生法を適用する";
-console.log("text=" + text);
-rules.forEach((v) => console.log(v.toString(), v.probability));
-Pcfg.parse(text, rules, (nodeTree, tokens, newRules) => {
-    console.log("### result ###");
-    if (!nodeTree) {
-        console.log("Cannot parse");
-    } else {
-        var N = nodeTree.length;
-        display(nodeTree, tokens, 0, N - 1, "S");
-        newRules.forEach((v) => {
-            console.log(v.toString(), v.probability);
-        });
-    }
+
+describe("traverser", function () {
+    it("should travers", function () {
+        const text = "沖縄の暑い気候に体が適応する";
+        return pcfg.parse(text, rules).then(result => {
+            traverser(result, {
+                enter(node, {depth}){
+                    //     console.log(new Array(depth * 4).join(" "), rule.source);
+                    //     console.log(new Array(depth * 4).join(" "), rule.token ? rule.token.surface_form : "");
+                    //     const parentRule = rule.parent;
+                    //     if (parentRule) {
+                    //         console.log(new Array(depth * 4).join("-"), "=>" + parentRule.source);
+                    //         console.log(new Array(depth * 4).join(" "), parentRule.token ? parentRule.token.surface_form : "")
+                    //     }
+                    // }
+                    if (node.token) {
+                        if (!node.parent) {
+                            return;
+                        }
+                        const surface_form = node.token.surface_form;
+                        if (surface_form === "適応") {
+                            const parentNode = node.parent;
+                            const rootNode = parentNode.parent;
+                            var indexOf = rootNode.children.indexOf(parentNode);
+                            const sibilingNode = rootNode.children[indexOf - 1];
+                            console.log(sibilingNode.children[sibilingNode.children.length - 1].token);
+                        }
+                    }
+                }
+            })
+        })
+    });
 });
-function display(tree, tokens, x, y, pos, depth = 0, leafCount = 0) {
-    var top = tree[x][y];
-    if (top === undefined) {
-        return leafCount;
-    }
-    var result = "";
-    var rule = top.rules[pos].sort((a, b) => {
-        return a.probability < b.probability ? -1 : 1
-    })[0];
-    if (rule.result1 == "END") {
-        result = "--->" + tokens[leafCount].surface_form;
-        leafCount++;
-    } else {
-        result = "(" + rule.probability.toString() + ")";
-    }
-    console.log(new Array(depth * 4).join(" "), rule.source, result);
-    if (rule.result1 !== "END") {
-        leafCount = display(tree, tokens, top.left[rule.toString()].x, top.left[rule.toString()].y, rule.result1, depth + 1, leafCount);
-    }
-    if (rule.result2 !== "END") {
-        leafCount = display(tree, tokens, top.right[rule.toString()].x, top.right[rule.toString()].y, rule.result2, depth + 1, leafCount);
-    }
-    return leafCount;
-}
-//# sourceMappingURL=index.js.map
