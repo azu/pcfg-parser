@@ -14,9 +14,11 @@ class Rule {
             rule.probability = parseFloat(result[4]);
             return rule;
         }
-        else
+        else {
             return null;
+        }
     }
+
     static endRule(pos) {
         return {
             source: pos,
@@ -25,7 +27,9 @@ class Rule {
             probability: 1
         };
     }
+
     toString() {
+        // console.log(`"${this.source}>${this.result1} ${this.result2} 0.2"`);
         return this.source + ">" + this.result1 + " " + this.result2;
     }
 }

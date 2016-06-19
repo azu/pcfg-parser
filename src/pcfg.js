@@ -53,6 +53,7 @@ class Pcfg {
             this.nodeMap[i] = [];
             this.ruleTreeMap[i] = [];
             var pos = Pcfg.getJoinedPos(tokens[i]);
+            console.log(pos);
             this.nodeMap[i][i] = new PcfgNode();
             this.nodeMap[i][i].inside[pos] = 1.0;
             this.ruleTreeMap[i][i] = new RuleTree.Node();
