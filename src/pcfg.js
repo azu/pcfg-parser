@@ -2,8 +2,7 @@
  * Created by laco on 14/12/26.
  */
 "use strict";
-const kuromoji = require("kuromoji");
-var DIC_DIR = "../../node_modules/kuromoji/dist/dict/";
+const getTokenizer = require("kuromojin").getTokenizer;
 const Rule = require("./rule");
 const PcfgNode = require("./pcfg_node");
 const RuleTree = require("./rule_tree_node");
@@ -23,8 +22,9 @@ class Pcfg {
         };
         parser.tokenize(text, fn);
     }
+
     tokenize(text, callback) {
-        kuromoji.builder({ dicPath: DIC_DIR }).build(function (error, tokenizer) {
+        getTokenizer().then(tokenizer => {
             var parsed = tokenizer.tokenize(text);
             parsed.forEach((token, i) => {
                 console.log(token.surface_form + " " + Pcfg.getJoinedPos(token));
@@ -38,10 +38,12 @@ class Pcfg {
             callback(parsed);
         });
     }
+
     static getJoinedPos(token) {
         return token.pos;
         //return [token.pos, token.pos_detail_1, token.pos_detail_2, token.pos_detail_3].join(",");
     }
+
     calc(tokens) {
         var N = tokens.length;
         this.nodeMap = new Array(N).map((v) => new Array(N));
@@ -92,8 +94,8 @@ class Pcfg {
                             else {
                                 this.ruleTreeMap[x][y].rules[rule.source].push(rule);
                             }
-                            this.ruleTreeMap[x][y].left[rule.toString()] = { x: x, y: x + (j - 1) };
-                            this.ruleTreeMap[x][y].right[rule.toString()] = { x: x + j, y: y };
+                            this.ruleTreeMap[x][y].left[rule.toString()] = {x: x, y: x + (j - 1)};
+                            this.ruleTreeMap[x][y].right[rule.toString()] = {x: x + j, y: y};
                         }
                     }
                 }
@@ -128,17 +130,17 @@ class Pcfg {
                             if (this.nodeMap[x + k][y].inside[rule.result2] > 0) {
                                 this.nodeMap[x + k][y].outside[rule.result2] =
                                     this.nodeMap[x + k][y].inside[rule.result2] +
-                                        (rule.probability *
-                                            this.nodeMap[x][y].outside[rule.source] *
-                                            this.nodeMap[x][x - (1 - k)].inside[rule.result1]);
+                                    (rule.probability *
+                                    this.nodeMap[x][y].outside[rule.source] *
+                                    this.nodeMap[x][x - (1 - k)].inside[rule.result1]);
                             }
                             //左側
                             if (this.nodeMap[x][y - k].inside[rule.result1] > 0) {
                                 this.nodeMap[x][y - k].outside[rule.result1] =
                                     this.nodeMap[x][y - k].outside[rule.result1] +
-                                        (rule.probability *
-                                            this.nodeMap[x][y].outside[rule.source] *
-                                            this.nodeMap[y + (1 - k)][y].inside[rule.result2]);
+                                    (rule.probability *
+                                    this.nodeMap[x][y].outside[rule.source] *
+                                    this.nodeMap[y + (1 - k)][y].inside[rule.result2]);
                             }
                         }
                     }
@@ -147,6 +149,7 @@ class Pcfg {
         }
         return true;
     }
+
     recalcProbability(tokens, nodeMap) {
         for (var i = 0; i < this.rules.length; i++) {
             var rule = this.rules[i];
@@ -155,6 +158,7 @@ class Pcfg {
             rule.probability = (rule.probability + newP) / 2;
         }
     }
+
     static usedCount(N, rule, nodeMap) {
         var count = 0;
         for (var n = 1; n < 1 + N - 1; n++) {
@@ -180,11 +184,13 @@ class Pcfg {
         }
         return count <= 0 ? 0.000000000000001 : count;
     }
+
     static toUniqueArray(array) {
         var a = [];
         for (var i = 0, l = array.length; i < l; i++)
-            if (a.indexOf(array[i]) === -1)
+            if (a.indexOf(array[i]) === -1) {
                 a.push(array[i]);
+            }
         return a;
     }
 }
